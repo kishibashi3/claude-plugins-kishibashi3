@@ -68,6 +68,16 @@ fi
 
 echo "[boot $(date +%H:%M:%S)] mode=$AUTH_MODE_LABEL user=$USER_ID tenant=${TENANT:-default} hub=$HUB"
 
+# tenant が unset の場合は「default 行き」を見落とせない強い WARN を出す。
+# agent-hub#28 (= 「見えない幽霊」 bug) で報告された operational pitfall への予防策:
+# AGENT_HUB_TENANT を export し忘れた / Monitor 経由で env 継承漏れ等の case で、
+# 「機能はしているが is_online=false で居ないように見える」 状態を boot 時に即発見させる。
+if [ -z "$TENANT" ]; then
+  echo "[WARN $(date +%H:%M:%S)] AGENT_HUB_TENANT is unset → connecting to default tenant."
+  echo "[WARN $(date +%H:%M:%S)]   If you expected a named tenant (= named tenant に register 済 handle で運用), abort with Ctrl-C and set AGENT_HUB_TENANT before launching."
+  echo "[WARN $(date +%H:%M:%S)]   Otherwise (= default tenant 雑談室で運用 / Private Edition), 無視して OK。"
+fi
+
 # 初回接続フラグ。初回 init/subscribed は stdout (通知)、reconnect 後は stderr (静音)
 FIRST_CONNECT=1
 
